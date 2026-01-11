@@ -1,5 +1,4 @@
 
-import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -12,15 +11,13 @@ class PdfReportService {
     final now = DateTime.now();
     final formattedDate = DateFormat('MMM d, yyyy, h:mm a').format(now);
 
-    final fontData = await PdfGoogleFonts.openSansRegular();
-    final boldFontData = await PdfGoogleFonts.openSansBold();
-    final font = pw.Font.ttf(fontData);
-    final boldFont = pw.Font.ttf(boldFontData);
+    final font = await PdfGoogleFonts.openSansRegular();
+    final boldFont = await PdfGoogleFonts.openSansBold();
 
     // 1. Executive Summary Data
     int totalSorted = logs.fold(0, (sum, log) => sum + log.quantitySorted);
     int totalNg = logs.fold(0, (sum, log) => sum + log.quantityNg);
-    double ngRate = totalSorted == 0 ? 0 : (totalNg / (totalSorted + totalNg)) * 100;
+    double ngRate = (totalSorted + totalNg) == 0 ? 0 : (totalNg / (totalSorted + totalNg)) * 100;
     int partsProcessed = logs.map((e) => e.partNo).toSet().length;
     String overallStatus = ngRate > 5.0 ? 'ACTION REQUIRED' : 'STABLE';
 
@@ -47,8 +44,8 @@ class PdfReportService {
       int ng = e['ng'];
       double rate = total == 0 ? 0 : (ng / total) * 100;
       return [
-        e['partName'],
-        e['supplier'],
+        e['partName'].toString(),
+        e['supplier'].toString(),
         total.toString(),
         e['ok'].toString(),
         ng.toString(),
@@ -64,7 +61,7 @@ class PdfReportService {
       }
     }
     
-    List<List<dynamic>> defectTableData = defectCounts.entries.map((entry) {
+    List<List<String>> defectTableData = defectCounts.entries.map((entry) {
       double pct = totalNg == 0 ? 0 : (entry.value / totalNg) * 100;
       return [
         entry.key,

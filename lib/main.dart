@@ -102,7 +102,7 @@ class SortMasterApp extends StatelessWidget {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return MaterialApp(
-          title: 'SortMaster Mobile',
+          title: 'Quality Control System Report (QCSR)',
           theme: lightTheme,
           darkTheme: darkTheme,
           themeMode: themeProvider.themeMode,

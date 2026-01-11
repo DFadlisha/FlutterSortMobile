@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/models/sorting_log.dart';
 import 'package:myapp/services/firestore_service.dart';
 import 'package:myapp/services/pdf_report_service.dart';
@@ -19,8 +20,88 @@ class ManagementDashboard extends StatelessWidget {
         
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Management Dashboard'),
+            title: const Text('QCSR - Management Dashboard'),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.playlist_add),
+                tooltip: 'Seed Sample Data',
+                onPressed: () async {
+                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+                  try {
+                    final now = DateTime.now();
+                    final List<SortingLog> sampleLogs = [
+                      SortingLog(
+                        partNo: 'PN-001',
+                        partName: 'Engine Bracket',
+                        quantitySorted: 500,
+                        quantityNg: 5,
+                        ngType: 'Burr',
+                        operatorName: 'Ali',
+                        supplier: 'Factory A',
+                        timestamp: Timestamp.fromDate(now.subtract(const Duration(hours: 8))),
+                      ),
+                      SortingLog(
+                        partNo: 'PN-002',
+                        partName: 'Brake Pad',
+                        quantitySorted: 450,
+                        quantityNg: 12,
+                        ngType: 'Cracked',
+                        operatorName: 'Siti',
+                        supplier: 'Factory B',
+                        timestamp: Timestamp.fromDate(now.subtract(const Duration(hours: 6))),
+                      ),
+                      SortingLog(
+                        partNo: 'PN-001',
+                        partName: 'Engine Bracket',
+                        quantitySorted: 600,
+                        quantityNg: 2,
+                        ngType: 'Scratched',
+                        operatorName: 'Ali',
+                        supplier: 'Factory A',
+                        timestamp: Timestamp.fromDate(now.subtract(const Duration(hours: 4))),
+                      ),
+                      SortingLog(
+                        partNo: 'PN-003',
+                        partName: 'Fuel Filter',
+                        quantitySorted: 300,
+                        quantityNg: 15,
+                        ngType: 'Leakage',
+                        operatorName: 'Raju',
+                        supplier: 'Factory C',
+                        timestamp: Timestamp.fromDate(now.subtract(const Duration(hours: 2))),
+                      ),
+                      SortingLog(
+                        partNo: 'PN-002',
+                        partName: 'Brake Pad',
+                        quantitySorted: 550,
+                        quantityNg: 8,
+                        ngType: 'Rust',
+                        operatorName: 'Siti',
+                        supplier: 'Factory B',
+                        timestamp: Timestamp.fromDate(now.subtract(const Duration(hours: 1))),
+                      ),
+                    ];
+
+                    for (var log in sampleLogs) {
+                      await firestoreService.addSortingLog(log);
+                    }
+
+                    // Seed sample parts for scanning test
+                    final partsMaster = FirebaseFirestore.instance.collection('parts_master');
+                    await partsMaster.doc('PN-001').set({'part_name': 'Engine Bracket'});
+                    await partsMaster.doc('PN-002').set({'part_name': 'Brake Pad'});
+                    await partsMaster.doc('PN-003').set({'part_name': 'Fuel Filter'});
+
+                    scaffoldMessenger.showSnackBar(
+                      const SnackBar(content: Text('Sample data and parts seeded successfully!')),
+                    );
+                  } catch (e) {
+                    scaffoldMessenger.showSnackBar(
+                      SnackBar(content: Text('Error seeding data: $e')),
+                    );
+                  }
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.picture_as_pdf),
                 tooltip: 'Export Report',

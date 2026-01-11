@@ -152,7 +152,7 @@ class _QualityScanPageState extends State<QualityScanPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quality Scan'),
+        title: const Text('QCSR - Quality Scan'),
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
