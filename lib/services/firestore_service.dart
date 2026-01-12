@@ -34,4 +34,14 @@ class FirestoreService {
       return null;
     }
   }
+
+  // Delete all sorting logs
+  Future<void> deleteAllLogs() async {
+    final collection = await _db.collection('sorting_logs').get();
+    final batch = _db.batch();
+    for (final doc in collection.docs) {
+      batch.delete(doc.reference);
+    }
+    return batch.commit();
+  }
 }

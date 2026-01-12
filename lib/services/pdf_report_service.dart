@@ -21,14 +21,15 @@ class PdfReportService {
     int partsProcessed = logs.map((e) => e.partNo).toSet().length;
     String overallStatus = ngRate > 5.0 ? 'ACTION REQUIRED' : 'STABLE';
 
-    // 2. Production Summary Data (Group by Part & Supplier)
+    // 2. Production Summary Data (Group by Part, Supplier & Location)
     Map<String, Map<String, dynamic>> productionSummary = {};
     for (var log in logs) {
-      final key = '${log.partName}|${log.supplier}';
+      final key = '${log.partName}|${log.supplier}|${log.factoryLocation}';
       if (!productionSummary.containsKey(key)) {
         productionSummary[key] = {
           'partName': log.partName,
           'supplier': log.supplier,
+          'location': log.factoryLocation,
           'total': 0,
           'ok': 0,
           'ng': 0,
@@ -46,6 +47,7 @@ class PdfReportService {
       return [
         e['partName'].toString(),
         e['supplier'].toString(),
+        e['location'].toString(),
         total.toString(),
         e['ok'].toString(),
         ng.toString(),
@@ -53,16 +55,19 @@ class PdfReportService {
       ];
     }).toList();
 
-    // 3. Defect Analysis Data (Group by NG Type)
+    // 3. Defect Analysis Data (Group by NG Type from all details)
     Map<String, int> defectCounts = {};
     for (var log in logs) {
-      if (log.quantityNg > 0 && log.ngType.isNotEmpty) {
-        defectCounts[log.ngType] = (defectCounts[log.ngType] ?? 0) + log.quantityNg;
+      for (var detail in log.ngDetails) {
+        if (detail.type.isNotEmpty) {
+          defectCounts[detail.type] = (defectCounts[detail.type] ?? 0) + 1;
+        }
       }
     }
     
     List<List<String>> defectTableData = defectCounts.entries.map((entry) {
-      double pct = totalNg == 0 ? 0 : (entry.value / totalNg) * 100;
+      int totalOccurrences = defectCounts.values.fold(0, (a, b) => a + b);
+      double pct = totalOccurrences == 0 ? 0 : (entry.value / totalOccurrences) * 100;
       return [
         entry.key,
         entry.value.toString(),
@@ -81,13 +86,22 @@ class PdfReportService {
       final dateStr = DateFormat('M/d, HH:mm').format(date);
       final total = log.quantitySorted + log.quantityNg;
       double rate = total == 0 ? 0 : (log.quantityNg / total) * 100;
+      
+      String ngTypes = log.ngDetails.map((e) => e.type).toSet().join(", ");
+      if (ngTypes.isEmpty) ngTypes = "-";
+      
+      String ops = log.operators.join(", ");
+      if (ops.isEmpty) ops = "-";
+      
       return [
         dateStr,
+        ops,
         log.partName,
         log.supplier,
+        log.factoryLocation,
         total.toString(),
         log.quantityNg.toString(),
-        log.ngType,
+        ngTypes,
         '${rate.toStringAsFixed(1)}%'
       ];
     }).toList();
@@ -98,108 +112,143 @@ class PdfReportService {
         pageTheme: pw.PageTheme(
           theme: pw.ThemeData.withFont(base: font, bold: boldFont),
           pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(40),
+          margin: const pw.EdgeInsets.all(32),
         ),
         header: (context) => pw.Column(
           children: [
-            pw.Text(
-              'QUALITY SORTING INSPECTION REPORT',
-              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('QUALITY CONTROL SYSTEM REPORT',
+                        style: pw.TextStyle(
+                            fontSize: 18,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColor.fromHex('#1A237E'))),
+                    pw.SizedBox(height: 4),
+                    pw.Text('NES SOLUTION AND NETWORK SDN BHD',
+                        style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                  ],
+                ),
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  children: [
+                    pw.Text('INSPECTION SUMMARY',
+                        style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.indigo)),
+                    pw.Text(formattedDate, style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+                  ],
+                ),
+              ],
             ),
-            pw.SizedBox(height: 5),
-            pw.Text('Generated: $formattedDate', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
-            pw.SizedBox(height: 20),
-            pw.Divider(thickness: 2),
-            pw.SizedBox(height: 20),
+            pw.SizedBox(height: 10),
+            pw.Divider(thickness: 1, color: PdfColors.indigo),
+            pw.SizedBox(height: 15),
           ],
         ),
-        footer: (context) => pw.Align(
-          alignment: pw.Alignment.centerRight,
-          child: pw.Text(
-            'Page ${context.pageNumber} of ${context.pagesCount}  |  CONFIDENTIAL - INTERNAL USE ONLY',
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey),
-          ),
+        footer: (context) => pw.Column(
+          children: [
+            pw.Divider(thickness: 0.5, color: PdfColors.grey400),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('QCSR Mobile - Digital Traceability System',
+                    style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey500)),
+                pw.Text('Page ${context.pageNumber} of ${context.pagesCount}',
+                    style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey500)),
+              ],
+            ),
+          ],
         ),
         build: (context) => [
-          // 1. Executive Summary
-          pw.Header(level: 1, text: '1. EXECUTIVE SUMMARY', textStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
-          pw.Table.fromTextArray(
-            headers: ['Total Sorted', 'Total NG', 'NG Rate', 'Parts Processed', 'Overall Status'],
-            data: [
-              [
-                NumberFormat('#,###').format(totalSorted),
-                NumberFormat('#,###').format(totalNg),
-                '${ngRate.toStringAsFixed(2)}%',
-                partsProcessed.toString(),
-                overallStatus
-              ]
+          // 1. Executive Summary Cards
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSummaryCard('Total Sorted', NumberFormat('#,###').format(totalSorted), PdfColors.indigo),
+              _buildSummaryCard('Total NG', NumberFormat('#,###').format(totalNg), PdfColors.orange800),
+              _buildSummaryCard('NG Rate', '${ngRate.toStringAsFixed(2)}%', PdfColors.red800),
+              _buildSummaryCard('Status', overallStatus, overallStatus == 'STABLE' ? PdfColors.green800 : PdfColors.red800),
             ],
-            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
-            cellStyle: const pw.TextStyle(fontSize: 10),
-            cellAlignment: pw.Alignment.center,
-            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
-            cellHeight: 30,
           ),
-          pw.SizedBox(height: 20),
+          pw.SizedBox(height: 25),
 
           // 2. Production Summary
-          pw.Header(level: 1, text: '2. PRODUCTION SUMMARY (BY PART & SUPPLIER)', textStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
+          _buildSectionTitle('1. PRODUCTION SUMMARY (BY PART, SUPPLIER & LOC)'),
           pw.Table.fromTextArray(
-            headers: ['Part Name', 'Supplier', 'Total', 'OK', 'NG', 'Rate'],
+            headers: ['Part Name', 'Supplier', 'Location', 'Total', 'OK', 'NG', 'Rate'],
             data: productionTableData,
-            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
-            cellStyle: const pw.TextStyle(fontSize: 10),
-            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+            headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 9),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.indigo),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+            cellAlignment: pw.Alignment.centerLeft,
+            headerAlignments: {0: pw.Alignment.centerLeft, 3: pw.Alignment.centerRight, 4: pw.Alignment.centerRight, 5: pw.Alignment.centerRight, 6: pw.Alignment.centerRight},
+            oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
             cellAlignments: {
-              0: pw.Alignment.centerLeft,
-              1: pw.Alignment.centerLeft,
-              2: pw.Alignment.centerRight,
               3: pw.Alignment.centerRight,
               4: pw.Alignment.centerRight,
               5: pw.Alignment.centerRight,
+              6: pw.Alignment.centerRight,
             },
           ),
-          pw.SizedBox(height: 20),
+          pw.SizedBox(height: 25),
 
-          // 3. Defect Analysis
-          pw.Header(level: 1, text: '3. DEFECT ANALYSIS', textStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
+          // 3. Operator Performance
+          _buildSectionTitle('2. OPERATOR PERFORMANCE RANKING'),
           pw.Table.fromTextArray(
-            headers: ['Defect Type', 'Qty', '%', 'Visual'],
+            headers: ['Rank', 'Operator Name', 'Total OK', 'NG Found', 'Quality Score'],
+            data: _calculateLeaderboard(logs),
+            headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 9),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.indigo),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+            cellAlignment: pw.Alignment.centerLeft,
+            oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+            cellAlignments: {
+              0: pw.Alignment.center,
+              2: pw.Alignment.centerRight,
+              3: pw.Alignment.centerRight,
+              4: pw.Alignment.centerRight,
+            },
+          ),
+          pw.SizedBox(height: 25),
+
+          // 4. Defect Analysis
+          _buildSectionTitle('3. DEFECT ANALYSIS (BY TYPE OCCURRENCE)'),
+          pw.Table.fromTextArray(
+            headers: ['Defect Type', 'Occurrences', '% Frequency', 'Visual Summary'],
             data: defectTableData,
+            headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 9),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.indigo),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+            oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
             columnWidths: {
               0: const pw.FlexColumnWidth(2),
               1: const pw.FlexColumnWidth(1),
               2: const pw.FlexColumnWidth(1),
               3: const pw.FlexColumnWidth(2),
             },
-            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
-            cellStyle: const pw.TextStyle(fontSize: 10),
-            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
-             cellAlignments: {
-              0: pw.Alignment.centerLeft,
+            cellAlignments: {
               1: pw.Alignment.centerRight,
               2: pw.Alignment.centerRight,
-              3: pw.Alignment.centerLeft,
             },
           ),
-          pw.SizedBox(height: 20),
+          pw.SizedBox(height: 25),
 
-          // 4. Detailed Logs
-          pw.Header(level: 1, text: '4. DETAILED LOGS (LAST 25)', textStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
+          // 5. Detailed Logs
+          _buildSectionTitle('4. DETAILED INSPECTION LOGS (RECENT)'),
           pw.Table.fromTextArray(
-            headers: ['Time', 'Part', 'Supplier', 'Total', 'NG', 'Type', 'Rate'],
+            headers: ['Time', 'Operators', 'Part', 'Supplier', 'Location', 'Total', 'NG', 'NG Types', 'Rate'],
             data: logsTableData,
-            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
-            cellStyle: const pw.TextStyle(fontSize: 9),
-            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+            headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 7),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.indigo),
+            cellStyle: const pw.TextStyle(fontSize: 7),
+            cellPadding: const pw.EdgeInsets.all(3),
+            oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
             cellAlignments: {
-              0: pw.Alignment.centerLeft,
-              1: pw.Alignment.centerLeft,
-              2: pw.Alignment.centerLeft,
-              3: pw.Alignment.centerRight,
-              4: pw.Alignment.centerRight,
-              5: pw.Alignment.centerLeft,
+              5: pw.Alignment.centerRight,
               6: pw.Alignment.centerRight,
+              8: pw.Alignment.centerRight,
             },
           ),
         ],
@@ -208,7 +257,74 @@ class PdfReportService {
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Quality_Report_${DateFormat('yyyyMMdd').format(now)}',
+      name: 'QCSR_Report_${DateFormat('yyyyMMdd').format(now)}',
     );
+  }
+
+  pw.Widget _buildSummaryCard(String title, String value, PdfColor color) {
+    return pw.Container(
+      width: 110,
+      padding: const pw.EdgeInsets.all(10),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.white,
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+        border: pw.Border.all(color: color.shade(0.2), width: 1),
+      ),
+      child: pw.Column(
+        children: [
+          pw.Text(title, style: pw.TextStyle(fontSize: 8, color: PdfColors.grey700, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 4),
+          pw.Text(value, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: color)),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildSectionTitle(String title) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(title, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.indigo900)),
+        pw.SizedBox(height: 5),
+        pw.Container(height: 1, color: PdfColors.indigo100),
+        pw.SizedBox(height: 10),
+      ],
+    );
+  }
+
+  List<List<String>> _calculateLeaderboard(List<SortingLog> logs) {
+    Map<String, Map<String, int>> stats = {};
+    for (var log in logs) {
+      final ops = log.operators.isEmpty ? ["Unknown"] : log.operators;
+      final splitOk = (log.quantitySorted / ops.length).floor();
+      final splitNg = (log.quantityNg / ops.length).floor();
+      
+      for (var op in ops) {
+        stats.putIfAbsent(op, () => {'ok': 0, 'ng': 0});
+        stats[op]!['ok'] = stats[op]!['ok']! + splitOk;
+        stats[op]!['ng'] = stats[op]!['ng']! + splitNg;
+      }
+    }
+
+    var sortedOps = stats.entries.toList()
+      ..sort((a, b) => b.value['ok']!.compareTo(a.value['ok']!));
+
+    List<List<String>> rows = [];
+    for (int i = 0; i < sortedOps.length; i++) {
+      final entry = sortedOps[i];
+      final ok = entry.value['ok']!;
+      final ng = entry.value['ng']!;
+      final total = ok + ng;
+      final quality = total == 0 ? 0 : (ok / total) * 100;
+
+      rows.add([
+        (i + 1).toString(),
+        entry.key,
+        ok.toString(),
+        ng.toString(),
+        '${quality.toStringAsFixed(1)}%'
+      ]);
+    }
+    return rows;
   }
 }
