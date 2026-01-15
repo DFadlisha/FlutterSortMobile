@@ -43,3 +43,13 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# APK and AAB files (build outputs)
+*.apk
+*.aab
+
+# IDE-specific directories
+.idx/
+
+# Temporary documentation files
+*_SUMMARY.md

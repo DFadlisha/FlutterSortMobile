@@ -39,6 +39,7 @@ class _QualityScanPageState extends State<QualityScanPage> {
   final _quantitySortedController = TextEditingController();
   final _quantityNgController = TextEditingController();
   final _remarksController = TextEditingController();
+  final _hourController = TextEditingController(text: DateTime.now().hour.toString().padLeft(2, '0'));
 
   final List<NgEntry> _ngEntries = [NgEntry()];
   final FirestoreService _firestoreService = FirestoreService();
@@ -57,6 +58,7 @@ class _QualityScanPageState extends State<QualityScanPage> {
     _quantitySortedController.dispose();
     _quantityNgController.dispose();
     _remarksController.dispose();
+    _hourController.dispose();
     for (var entry in _ngEntries) {
       entry.dispose();
     }
@@ -194,6 +196,7 @@ class _QualityScanPageState extends State<QualityScanPage> {
     _quantitySortedController.clear();
     _quantityNgController.clear();
     _remarksController.clear();
+    _hourController.text = DateTime.now().hour.toString().padLeft(2, '0');
     for (var entry in _ngEntries) {
       entry.dispose();
     }
@@ -279,12 +282,17 @@ class _QualityScanPageState extends State<QualityScanPage> {
     }
 
     return Scaffold(
+      backgroundColor: const Color(0xFF131131),
       appBar: AppBar(
-        title: const Text('QCSR - Quality Scan'),
+        elevation: 0,
+        backgroundColor: const Color(0xFF1C1A45),
+        title: const Text('QCSR - Quality Report', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: const Icon(Icons.picture_as_pdf),
+            icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
             onPressed: _generatePdf,
+            tooltip: 'Generate PDF Report',
           ),
         ],
       ),
@@ -298,9 +306,10 @@ class _QualityScanPageState extends State<QualityScanPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // 1. Job Information Card
-                  _buildSectionCard(
+                  _buildModernSectionCard(
                     title: 'JOB INFORMATION',
                     icon: Icons.assignment_outlined,
+                    color: Colors.indigo,
                     children: [
                       TextFormField(
                         controller: _partNoController,
@@ -338,28 +347,54 @@ class _QualityScanPageState extends State<QualityScanPage> {
                         ),
                         validator: (value) => value!.isEmpty ? 'Enter Location' : null,
                       ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _hourController,
+                        decoration: InputDecoration(
+                          labelText: 'Hour (24-hour format)',
+                          prefixIcon: const Icon(Icons.access_time, color: const Color(0xFF7B61FF)),
+                          helperText: 'Log entry for this specific hour',
+                          helperStyle: const TextStyle(color: Colors.white60, fontSize: 11),
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value!.isEmpty) return 'Enter hour';
+                          int? hour = int.tryParse(value);
+                          if (hour == null || hour < 0 || hour > 23) {
+                            return 'Enter valid hour (0-23)';
+                          }
+                          return null;
+                        },
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
 
                   // 2. Sorting Team Card
                   Card(
-                    elevation: 2,
-                    color: Colors.indigo.shade800,
+                    elevation: 0,
+                    color: const Color(0xFF2D3561),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.indigo.shade900, width: 1.5),
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: const Color(0xFF7B61FF).withOpacity(0.3), width: 1),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(20.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Row(
+                          Row(
                             children: [
-                              Icon(Icons.group, color: Colors.white, size: 20),
-                              SizedBox(width: 8),
-                              Text('SORTING TEAM', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.1)),
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF7B61FF).withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.group, color: const Color(0xFF7B61FF), size: 20),
+                              ),
+                              const SizedBox(width: 12),
+                              const Text('OPERATOR INFO', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF7B61FF), letterSpacing: 0.5)),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -367,43 +402,61 @@ class _QualityScanPageState extends State<QualityScanPage> {
                             int idx = entry.key;
                             var controller = entry.value;
                             return Padding(
-                              padding: const EdgeInsets.only(bottom: 10.0),
+                              padding: const EdgeInsets.only(bottom: 12.0),
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: TextFormField(
                                       controller: controller,
+                                      style: const TextStyle(color: Colors.white),
                                       decoration: InputDecoration(
                                         labelText: 'Operator ${idx + 1} Name',
-                                        prefixIcon: const Icon(Icons.person_outline),
-                                        filled: true,
-                                        fillColor: Colors.white,
+                                        labelStyle: const TextStyle(color: Colors.white70),
+                                        prefixIcon: const Icon(Icons.person_outline, color: const Color(0xFF7B61FF)),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: const BorderSide(color: const Color(0xFF7B61FF), width: 2),
+                                        ),
                                       ),
-                                      validator: (value) => value!.isEmpty ? 'Enter Name' : null,
+                                      validator: (value) => value!.isEmpty ? 'Enter name' : null,
                                     ),
                                   ),
                                   if (_operatorControllers.length > 1)
                                     IconButton(
-                                      icon: const Icon(Icons.remove_circle, color: Colors.redAccent),
-                                      onPressed: () => setState(() {
-                                        controller.dispose();
-                                        _operatorControllers.removeAt(idx);
-                                      }),
+                                      icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
+                                      onPressed: () {
+                                        setState(() {
+                                          controller.dispose();
+                                          _operatorControllers.removeAt(idx);
+                                        });
+                                      },
                                     ),
                                 ],
                               ),
                             );
                           }),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton.icon(
-                              onPressed: () => setState(() => _operatorControllers.add(TextEditingController())),
-                              icon: const Icon(Icons.person_add_alt_1),
-                              label: const Text('Add Team Member'),
+                              onPressed: () {
+                                setState(() {
+                                  _operatorControllers.add(TextEditingController());
+                                });
+                              },
+                              icon: const Icon(Icons.person_add_outlined),
+                              label: const Text('Add Another Operator'),
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: const BorderSide(color: Colors.white, width: 1.5),
+                                foregroundColor: const Color(0xFF7B61FF),
+                                side: const BorderSide(color: Color(0xFF7B61FF)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                               ),
                             ),
@@ -415,20 +468,31 @@ class _QualityScanPageState extends State<QualityScanPage> {
                   const SizedBox(height: 16),
 
                   // 3. Production Volume
-                  _buildSectionCard(
+                  _buildModernSectionCard(
                     title: 'PRODUCTION VOLUME',
                     icon: Icons.inventory_2_outlined,
+                    color: Colors.green,
                     children: [
                       Row(
                         children: [
                           Expanded(
                             child: TextFormField(
                               controller: _quantitySortedController,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: 'Total Sorted',
-                                prefixIcon: Icon(Icons.check_circle_outline, color: Colors.green),
-                                filled: true,
-                                fillColor: Colors.white,
+                                prefixIcon: const Icon(Icons.check_circle_outline, color: Colors.green),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: Colors.green, width: 2),
+                                ),
                               ),
                               keyboardType: TextInputType.number,
                               validator: (value) => value!.isEmpty ? 'Enter Qty' : null,
@@ -438,11 +502,21 @@ class _QualityScanPageState extends State<QualityScanPage> {
                           Expanded(
                             child: TextFormField(
                               controller: _quantityNgController,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: 'Total NG',
-                                prefixIcon: Icon(Icons.report_problem_outlined, color: Colors.orange),
-                                filled: true,
-                                fillColor: Colors.white,
+                                prefixIcon: const Icon(Icons.report_problem_outlined, color: Colors.orange),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: Colors.orange, width: 2),
+                                ),
                               ),
                               keyboardType: TextInputType.number,
                               validator: (value) => value!.isEmpty ? 'Enter Qty' : null,
@@ -456,18 +530,25 @@ class _QualityScanPageState extends State<QualityScanPage> {
 
                   // 4. NG Details
                   Container(
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade900,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.shade900, width: 1.5),
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.withOpacity(0.3), width: 1),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.new_releases_outlined, color: Colors.white, size: 20),
-                        SizedBox(width: 8),
-                        Text('NG DEFECT DETAILS', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.1)),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.new_releases_outlined, color: Colors.red, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('NG DEFECT DETAILS', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.red, letterSpacing: 0.5)),
                       ],
                     ),
                   ),
@@ -475,24 +556,31 @@ class _QualityScanPageState extends State<QualityScanPage> {
                     int index = entry.key;
                     NgEntry detail = entry.value;
                     return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      color: Colors.red.shade800,
+                      elevation: 0,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      color: const Color(0xFF2D3561),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: Colors.red.shade900, width: 1.5),
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: Colors.redAccent.withOpacity(0.5), width: 1),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(20.0),
                         child: Column(
                           children: [
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('ENTRY #${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text('ENTRY #${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 13)),
+                                ),
                                 if (_ngEntries.length > 1)
                                   IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: Colors.white),
+                                    icon: const Icon(Icons.delete_outline, color: Colors.red),
                                     onPressed: () => _removeNgEntry(index),
                                   ),
                               ],
@@ -500,22 +588,42 @@ class _QualityScanPageState extends State<QualityScanPage> {
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: detail.typeController,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: 'Defect Type',
-                                prefixIcon: Icon(Icons.error_outline),
-                                filled: true,
-                                fillColor: Colors.white,
+                                prefixIcon: const Icon(Icons.error_outline, color: Colors.red),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: Colors.red, width: 2),
+                                ),
                               ),
                               validator: (value) => value!.isEmpty ? 'Enter NG Type' : null,
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 16),
                             TextFormField(
                               controller: detail.operatorController,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: 'Inspector Name',
-                                prefixIcon: Icon(Icons.manage_accounts_outlined),
-                                filled: true,
-                                fillColor: Colors.white,
+                                prefixIcon: const Icon(Icons.manage_accounts_outlined, color: Colors.red),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: Colors.red, width: 2),
+                                ),
                               ),
                               validator: (value) => value!.isEmpty ? 'Enter Name' : null,
                             ),
@@ -559,11 +667,16 @@ class _QualityScanPageState extends State<QualityScanPage> {
                                     ),
                                   ),
                             const SizedBox(height: 8),
-                            TextButton.icon(
+                            OutlinedButton.icon(
                               onPressed: () => _pickImage(detail),
-                              icon: const Icon(Icons.camera_alt_outlined, color: Colors.white),
-                              label: Text(detail.image == null ? 'Attach Defect Photo' : 'Change Photo', style: const TextStyle(color: Colors.white)),
-                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              icon: const Icon(Icons.camera_alt_outlined),
+                              label: Text(detail.image == null ? 'Attach Defect Photo' : 'Change Photo'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                side: BorderSide(color: Colors.redAccent.withOpacity(0.5), width: 1.5),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
                             ),
                           ],
                         ),
@@ -577,41 +690,51 @@ class _QualityScanPageState extends State<QualityScanPage> {
                     label: const Text('Add Another NG Entry'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
-                      backgroundColor: Colors.red.shade800,
-                      side: BorderSide(color: Colors.red.shade900, width: 1.5),
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      side: BorderSide(color: Colors.redAccent.withOpacity(0.5), width: 1.5),
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   const SizedBox(height: 24),
 
                   // 5. Remarks
-                  _buildSectionCard(
-                    title: 'FIXED FINDINGS / REMARKS',
+                  _buildModernSectionCard(
+                    title: 'ADDITIONAL REMARKS',
                     icon: Icons.note_alt_outlined,
+                    color: Colors.blueGrey,
                     children: [
                       TextFormField(
                         controller: _remarksController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Enter any additional notes or findings here...',
-                          border: InputBorder.none,
-                          filled: true,
-                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.blueGrey, width: 2),
+                          ),
                         ),
-                        maxLines: 3,
+                        maxLines: 4,
                       ),
                     ],
                   ),
                   const SizedBox(height: 32),
 
                   Container(
-                    height: 56,
+                    height: 64,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Colors.indigo.shade800, Colors.indigo.shade600],
+                        colors: [const Color(0xFF7B61FF), const Color(0xFF6344FF)],
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
-                        BoxShadow(color: Colors.indigo.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4)),
+                        BoxShadow(color: const Color(0xFF7B61FF).withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 6)),
                       ],
                     ),
                     child: ElevatedButton(
@@ -619,11 +742,11 @@ class _QualityScanPageState extends State<QualityScanPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                       child: _isSubmitting
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('COMPLETE & SUBMIT LOG', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.1)),
+                          ? const CircularProgressIndicator(color: Colors.black)
+                          : const Text('COMPLETE & SUBMIT LOG', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black, letterSpacing: 1.2)),
                     ),
                   ),
                   const SizedBox(height: 40),
@@ -662,6 +785,41 @@ class _QualityScanPageState extends State<QualityScanPage> {
               ],
             ),
             const SizedBox(height: 16),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernSectionCard({required String title, required IconData icon, required Color color, required List<Widget> children}) {
+    return Card(
+      elevation: 0,
+      color: const Color(0xFF2D3561),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: const Color(0xFF7B61FF).withOpacity(0.3), width: 1),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF7B61FF), letterSpacing: 0.5)),
+              ],
+            ),
+            const SizedBox(height: 20),
             ...children,
           ],
         ),

@@ -101,10 +101,35 @@ class SortMasterApp extends StatelessWidget {
 
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
+        final Color purpleLogoColor = const Color(0xFF7B61FF);
+        final Color backgroundLogoColor = const Color(0xFF131131);
+
         return MaterialApp(
           title: 'Quality Control System Report (QCSR)',
-          theme: lightTheme,
-          darkTheme: darkTheme,
+          theme: ThemeData(
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: purpleLogoColor,
+              brightness: Brightness.light,
+            ),
+            textTheme: appTextTheme,
+          ),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: purpleLogoColor,
+              brightness: Brightness.dark,
+              surface: backgroundLogoColor,
+              primary: purpleLogoColor,
+            ),
+            scaffoldBackgroundColor: backgroundLogoColor,
+            textTheme: appTextTheme,
+            appBarTheme: AppBarTheme(
+              backgroundColor: const Color(0xFF1C1A45),
+              foregroundColor: Colors.white,
+              titleTextStyle: GoogleFonts.oswald(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+          ),
           themeMode: themeProvider.themeMode,
           home: const HomePage(),
         );

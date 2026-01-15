@@ -3,7 +3,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/models/sorting_log.dart';
 import 'package:myapp/services/firestore_service.dart';
-import 'package:myapp/services/pdf_report_service.dart';
 import 'package:myapp/services/excel_export_service.dart';
 
 class ManagementDashboard extends StatelessWidget {
@@ -12,166 +11,66 @@ class ManagementDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final FirestoreService firestoreService = FirestoreService();
-    final PdfReportService pdfReportService = PdfReportService();
     final ExcelExportService excelExportService = ExcelExportService();
 
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: StreamBuilder<List<SortingLog>>(
         stream: firestoreService.getSortingLogs(),
         builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              backgroundColor: Color(0xFF1A1F3A),
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          if (snapshot.hasError) {
+            return Scaffold(
+              backgroundColor: const Color(0xFF1A1F3A),
+              body: Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white))),
+            );
+          }
+
           final logs = snapshot.data ?? [];
 
           return Scaffold(
+            backgroundColor: const Color(0xFF1A1F3A),
             appBar: AppBar(
-              title: const Text('QCSR - Analytics Dashboard'),
-              backgroundColor: Colors.indigo.shade800,
+              elevation: 0,
+              backgroundColor: const Color(0xFF1C1A45),
+              title: const Text('QCSR - Operator Output', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              iconTheme: const IconThemeData(color: Colors.white),
               bottom: TabBar(
-                isScrollable: true,
                 labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                indicatorColor: Colors.white,
-                indicatorWeight: 3,
-                tabs: [
-                  const Tab(icon: Icon(Icons.dashboard_outlined), text: 'Overview'),
-                  const Tab(icon: Icon(Icons.people_outline), text: 'Operator Perf.'),
-                  const Tab(icon: Icon(Icons.factory_outlined), text: 'Supplier & Location'),
+                unselectedLabelColor: Colors.white60,
+                indicatorColor: const Color(0xFF7B61FF),
+                indicatorWeight: 4,
+                indicatorSize: TabBarIndicatorSize.tab,
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                tabs: const [
+                  Tab(icon: Icon(Icons.analytics_outlined), text: 'OVERVIEW'),
+                  Tab(icon: Icon(Icons.speed), text: 'OPERATOR PERFORMANCE'),
                 ],
               ),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.playlist_add),
-                  tooltip: 'Seed Sample Data',
-                  onPressed: () => _seedSampleData(context, firestoreService),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
-                  tooltip: 'Clear All Data',
-                  onPressed: () => _showDeleteConfirmationDialog(context, firestoreService),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.table_chart),
+                  icon: const Icon(Icons.table_chart, color: Colors.white),
                   tooltip: 'Export Excel',
                   onPressed: logs.isEmpty ? null : () => _exportExcel(context, excelExportService, logs),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.picture_as_pdf),
-                  tooltip: 'Export PDF',
-                  onPressed: logs.isEmpty ? null : () => pdfReportService.generateReport(logs),
-                ),
               ],
             ),
-            body: TabBarView(
-              children: [
-                _buildOverviewTab(context, snapshot, logs),
-                _buildOperatorPerformanceTab(context, logs),
-                _buildSupplierLocationTab(context, logs),
-              ],
+            body: Container(
+              decoration: const BoxDecoration(color: Color(0xFF131131)),
+              child: TabBarView(
+                children: [
+                  _buildOverviewTab(context, snapshot, logs),
+                  _buildOperatorPerformanceTab(context, logs),
+                ],
+              ),
             ),
           );
         },
-      ),
-    );
-  }
-
-  Future<void> _seedSampleData(BuildContext context, FirestoreService firestoreService) async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    try {
-      final now = DateTime.now();
-      final List<SortingLog> sampleLogs = [
-        SortingLog(
-          partNo: 'PN-001',
-          partName: 'Engine Bracket',
-          quantitySorted: 500,
-          quantityNg: 5,
-          supplier: 'Tech-Corp',
-          factoryLocation: 'Main Plant - Line 1',
-          operators: ['Ali', 'Abu'],
-          remarks: 'Minor burr found on edges.',
-          ngDetails: [NgDetail(type: 'Burr', operatorName: 'Ali')],
-          timestamp: Timestamp.fromDate(DateTime(now.year, now.month, now.day, 8, 30)),
-        ),
-        SortingLog(
-          partNo: 'PN-002',
-          partName: 'Brake Pad',
-          quantitySorted: 450,
-          quantityNg: 12,
-          supplier: 'Auto-Parts Inc',
-          factoryLocation: 'West Wing - Line 3',
-          operators: ['Siti'],
-          remarks: 'Surface cracks detected.',
-          ngDetails: [NgDetail(type: 'Cracked', operatorName: 'Siti')],
-          timestamp: Timestamp.fromDate(DateTime(now.year, now.month, now.day, 9, 15)),
-        ),
-        SortingLog(
-          partNo: 'PN-001',
-          partName: 'Engine Bracket',
-          quantitySorted: 600,
-          quantityNg: 2,
-          supplier: 'Tech-Corp',
-          factoryLocation: 'Main Plant - Line 1',
-          operators: ['Ali'],
-          remarks: 'Handling scratches.',
-          ngDetails: [NgDetail(type: 'Scratched', operatorName: 'Ali')],
-          timestamp: Timestamp.fromDate(DateTime(now.year, now.month, now.day, 10, 45)),
-        ),
-        SortingLog(
-          partNo: 'PN-003',
-          partName: 'Fuel Filter',
-          quantitySorted: 300,
-          quantityNg: 15,
-          supplier: 'Global Components',
-          factoryLocation: 'External Warehouse B',
-          operators: ['Raju', 'Abu'],
-          remarks: 'Seal failure.',
-          ngDetails: [NgDetail(type: 'Leakage', operatorName: 'Raju')],
-          timestamp: Timestamp.fromDate(DateTime(now.year, now.month, now.day, 11, 20)),
-        ),
-      ];
-
-      for (var log in sampleLogs) {
-        await firestoreService.addSortingLog(log);
-      }
-
-      scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Sample data seeded successfully!')));
-    } catch (e) {
-      scaffoldMessenger.showSnackBar(SnackBar(content: Text('Error seeding data: $e')));
-    }
-  }
-
-  void _showDeleteConfirmationDialog(BuildContext context, FirestoreService firestoreService) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear All Data?'),
-        content: const Text(
-          'This will permanently delete all sorting logs from the database. This action cannot be undone.',
-          style: TextStyle(color: Colors.red),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            onPressed: () async {
-              Navigator.pop(context);
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
-              try {
-                await firestoreService.deleteAllLogs();
-                scaffoldMessenger.showSnackBar(
-                  const SnackBar(content: Text('All data has been cleared.')),
-                );
-              } catch (e) {
-                scaffoldMessenger.showSnackBar(
-                  SnackBar(content: Text('Error clearing data: $e')),
-                );
-              }
-            },
-            child: const Text('Clear Everything'),
-          ),
-        ],
       ),
     );
   }
@@ -212,9 +111,9 @@ class ManagementDashboard extends StatelessWidget {
               height: 250,
               padding: const EdgeInsets.fromLTRB(16, 24, 24, 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFF2D3561),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.indigo.withOpacity(0.1)),
+                border: Border.all(color: const Color(0xFF7B61FF).withOpacity(0.3)),
               ),
               child: LineChart(_buildChartData(logs, context)),
             ),
@@ -226,9 +125,9 @@ class ManagementDashboard extends StatelessWidget {
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFF2D3561),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.indigo.withOpacity(0.1)),
+                border: Border.all(color: const Color(0xFF7B61FF).withOpacity(0.3)),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
@@ -251,9 +150,9 @@ class ManagementDashboard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, size: 20, color: Colors.indigo.shade800),
+            Icon(icon, size: 20, color: const Color(0xFF7B61FF)),
             const SizedBox(width: 8),
-            Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.indigo.shade900, letterSpacing: 1.2)),
+            Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2)),
           ],
         ),
         const SizedBox(height: 12),
@@ -308,7 +207,7 @@ class ManagementDashboard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'HOURLY SORTING PERFORMANCE (Individual/Split)',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.indigo),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
                   ),
                 ),
               ],
@@ -325,11 +224,11 @@ class ManagementDashboard extends StatelessWidget {
               ),
               child: DataTable(
                 headingRowHeight: 48,
-                headingTextStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+                headingTextStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12),
                 columns: [
-                  const DataColumn(label: Text('Operator')),
-                  ...sortedHours.map((h) => DataColumn(label: Text('${h.toString().padLeft(2, '0')}:00', style: const TextStyle(fontSize: 12)))),
-                  const DataColumn(label: Text('Total OK', style: TextStyle(color: Colors.indigo))),
+                  const DataColumn(label: Text('Operator', style: TextStyle(color: Colors.white))),
+                  ...sortedHours.map((h) => DataColumn(label: Text('${h.toString().padLeft(2, '0')}:00', style: const TextStyle(fontSize: 12, color: Colors.white)))),
+                  const DataColumn(label: Text('Total OK', style: TextStyle(color: const Color(0xFF7B61FF), fontWeight: FontWeight.bold))),
                 ],
                 rows: operators.map((op) {
                   int opTotal = operatorHourly[op]!.values.fold(0, (a, b) => a + b);
@@ -339,9 +238,9 @@ class ManagementDashboard extends StatelessWidget {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.account_circle, size: 16, color: Colors.grey),
+                            const Icon(Icons.account_circle, size: 16, color: Colors.white70),
                             const SizedBox(width: 4),
-                            Text(op, style: const TextStyle(fontWeight: FontWeight.w600)),
+                            Text(op, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
                           ],
                         ),
                       ),
@@ -361,8 +260,9 @@ class ManagementDashboard extends StatelessWidget {
                             child: Text(
                               val == 0 ? '-' : val.toString(),
                               style: TextStyle(
-                                fontWeight: val > 200 ? FontWeight.bold : FontWeight.normal,
-                                color: val > 0 ? Colors.indigo : Colors.grey,
+                                fontWeight: val > 200 ? FontWeight.bold : FontWeight.w600,
+                                color: val > 0 ? Colors.white : Colors.white38,
+                                fontSize: 13,
                               ),
                             ),
                           ),
@@ -371,7 +271,7 @@ class ManagementDashboard extends StatelessWidget {
                       DataCell(
                         Text(
                           opTotal.toString(),
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo, fontSize: 16),
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: const Color(0xFF7B61FF), fontSize: 16),
                         ),
                       ),
                     ],
@@ -387,79 +287,15 @@ class ManagementDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildSupplierLocationTab(BuildContext context, List<SortingLog> logs) {
-    if (logs.isEmpty) return const Center(child: Text('No data for location analysis'));
-
-    // Grouping by Supplier
-    Map<String, int> supplierTotal = {};
-    Map<String, int> locationTotal = {};
-
-    for (var log in logs) {
-      supplierTotal.update(log.supplier, (v) => v + log.quantitySorted, ifAbsent: () => log.quantitySorted);
-      locationTotal.update(log.factoryLocation, (v) => v + log.quantitySorted, ifAbsent: () => log.quantitySorted);
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader(Icons.business, 'Production by Supplier'),
-          const SizedBox(height: 8),
-          _buildSummaryTable(supplierTotal, 'Supplier Name'),
-          const SizedBox(height: 32),
-          _buildSectionHeader(Icons.location_on, 'Production by Factory Location'),
-          const SizedBox(height: 8),
-          _buildSummaryTable(locationTotal, 'Location / Line'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(IconData icon, String title) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.indigo.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.indigo.withOpacity(0.1)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.indigo, size: 20),
-          const SizedBox(width: 10),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.indigo, letterSpacing: 1.1)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryTable(Map<String, int> data, String label) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.indigo.withOpacity(0.1)),
-      ),
-      child: DataTable(
-        headingRowHeight: 40,
-        headingRowColor: WidgetStateProperty.all(Colors.indigo.withOpacity(0.02)),
-        columns: [
-          DataColumn(label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.indigo))),
-          const DataColumn(label: Text('TOTAL OK', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.indigo)), numeric: true),
-        ],
-        rows: data.entries.map((e) => DataRow(cells: [
-          DataCell(Text(e.key.isEmpty ? "Not Specified" : e.key, style: const TextStyle(fontSize: 13))),
-          DataCell(Text(e.value.toString(), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo, fontSize: 13))),
-        ])).toList(),
-      ),
-    );
-  }
 
   Widget _buildPerformanceInsights(List<String> operators, Map<String, Map<int, int>> data) {
     return Card(
-      color: Colors.blueGrey[50],
+      color: const Color(0xFF2D3561),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: const Color(0xFF7B61FF).withOpacity(0.3)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -467,12 +303,12 @@ class ManagementDashboard extends StatelessWidget {
           children: [
             const Row(
               children: [
-                Icon(Icons.insights, color: Colors.blueGrey),
+                Icon(Icons.insights, color: const Color(0xFF7B61FF)),
                 SizedBox(width: 8),
-                Text('Performance Insights', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text('Performance Insights', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
               ],
             ),
-            const Divider(),
+            const Divider(color: Colors.white24),
             ...operators.map((op) {
               final hours = data[op]!;
               if (hours.isEmpty) return Container();
@@ -486,7 +322,7 @@ class ManagementDashboard extends StatelessWidget {
               });
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text('• $op peak performance at ${peakHour.toString().padLeft(2, '0')}:00 ($peakVal units)'),
+                child: Text('• $op peak performance at ${peakHour.toString().padLeft(2, '0')}:00 ($peakVal units)', style: const TextStyle(color: Colors.white70)),
               );
             }),
           ],
@@ -501,12 +337,16 @@ class ManagementDashboard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [const Color(0xFF2D3561), const Color(0xFF3A4270)],
+          ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
           ],
-          border: Border.all(color: color.withOpacity(0.1)),
+          border: Border.all(color: const Color(0xFF7B61FF).withOpacity(0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -517,9 +357,9 @@ class ManagementDashboard extends StatelessWidget {
               child: Icon(icon, size: 16, color: color),
             ),
             const SizedBox(height: 12),
-            Text(title, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey.shade600, letterSpacing: 0.5)),
+            Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 0.5)),
             const SizedBox(height: 4),
-            Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+            Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: const Color(0xFF7B61FF))),
           ],
         ),
       ),
@@ -540,8 +380,8 @@ class ManagementDashboard extends StatelessWidget {
     return LineChartData(
       lineTouchData: LineTouchData(
         touchTooltipData: LineTouchTooltipData(
-          getTooltipColor: (spot) => Colors.indigo.withOpacity(0.8),
-          getTooltipItems: (spots) => spots.map((s) => LineTooltipItem('${s.y.toInt()} units', const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))).toList(),
+          getTooltipColor: (spot) => const Color(0xFF7B61FF).withOpacity(0.9),
+          getTooltipItems: (spots) => spots.map((s) => LineTooltipItem('${s.y.toInt()} units', const TextStyle(color: Colors.black, fontWeight: FontWeight.bold))).toList(),
         ),
       ),
       lineBarsData: [
@@ -549,22 +389,22 @@ class ManagementDashboard extends StatelessWidget {
           spots: spots.isEmpty ? [const FlSpot(0, 0)] : spots,
           isCurved: true,
           curveSmoothness: 0.35,
-          color: Colors.indigo.shade700,
-          barWidth: 4,
+          color: const Color(0xFF7B61FF),
+          barWidth: 3,
           isStrokeCapRound: true,
           dotData: FlDotData(
             show: true,
             getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-              radius: 4,
-              color: Colors.white,
+              radius: 5,
+              color: const Color(0xFF7B61FF),
               strokeWidth: 2,
-              strokeColor: Colors.indigo.shade700,
+              strokeColor: Colors.white,
             ),
           ),
           belowBarData: BarAreaData(
             show: true,
             gradient: LinearGradient(
-              colors: [Colors.indigo.withOpacity(0.3), Colors.indigo.withOpacity(0.01)],
+              colors: [const Color(0xFF7B61FF).withOpacity(0.3), const Color(0xFF7B61FF).withOpacity(0.01)],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -576,7 +416,7 @@ class ManagementDashboard extends StatelessWidget {
           sideTitles: SideTitles(
             showTitles: true,
             reservedSize: 40,
-            getTitlesWidget: (val, meta) => Text(val.toInt().toString(), style: TextStyle(color: Colors.grey.shade600, fontSize: 10)),
+            getTitlesWidget: (val, meta) => Text(val.toInt().toString(), style: const TextStyle(color: Colors.black87, fontSize: 11, fontWeight: FontWeight.w600)),
           ),
         ),
         bottomTitles: AxisTitles(
@@ -584,7 +424,7 @@ class ManagementDashboard extends StatelessWidget {
             showTitles: true,
             reservedSize: 30,
             interval: 1,
-            getTitlesWidget: (val, meta) => Text('${val.toInt().toString().padLeft(2, '0')}:00', style: TextStyle(color: Colors.grey.shade600, fontSize: 9)),
+            getTitlesWidget: (val, meta) => Text('${val.toInt().toString().padLeft(2, '0')}:00', style: const TextStyle(color: Colors.black87, fontSize: 10, fontWeight: FontWeight.w600)),
           ),
         ),
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -593,7 +433,7 @@ class ManagementDashboard extends StatelessWidget {
       gridData: FlGridData(
         show: true,
         drawVerticalLine: false,
-        getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+        getDrawingHorizontalLine: (value) => FlLine(color: Colors.white.withOpacity(0.1), strokeWidth: 1),
       ),
       borderData: FlBorderData(show: false),
     );
@@ -602,14 +442,14 @@ class ManagementDashboard extends StatelessWidget {
   Widget _buildLogsTable(List<SortingLog> logs, BuildContext context) {
     return DataTable(
       headingRowHeight: 45,
-      headingRowColor: WidgetStateProperty.all(Colors.indigo.shade50.withOpacity(0.5)),
+      headingRowColor: WidgetStateProperty.all(Colors.white.withOpacity(0.05)),
       horizontalMargin: 16,
       columnSpacing: 24,
       columns: [
-        const DataColumn(label: Text('TEAM / OPERATORS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.indigo))),
-        const DataColumn(label: Text('PART NAME', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.indigo))),
-        const DataColumn(label: Text('QTY', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.indigo))),
-        const DataColumn(label: Text('NG DETAILS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.indigo))),
+        const DataColumn(label: Text('TEAM / OPERATORS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white))),
+        const DataColumn(label: Text('PART NAME', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white))),
+        const DataColumn(label: Text('QTY', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white))),
+        const DataColumn(label: Text('NG DETAILS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white))),
       ],
       rows: logs.take(20).map((log) {
         String ops = log.operators.join(", ");
@@ -625,31 +465,31 @@ class ManagementDashboard extends StatelessWidget {
                 message: ops,
                 child: Row(
                   children: [
-                    const Icon(Icons.people_outline, size: 14, color: Colors.grey),
+                    const Icon(Icons.people_outline, size: 14, color: Colors.white70),
                     const SizedBox(width: 8),
                     Text(
                       ops.length > 30 ? "${ops.substring(0, 27)}..." : ops,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.white),
                     ),
                   ],
                 ),
               ),
             ),
-            DataCell(Text(log.partName, style: const TextStyle(fontSize: 12))),
-            DataCell(Text(log.quantitySorted.toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.indigo))),
+            DataCell(Text(log.partName, style: const TextStyle(fontSize: 12, color: Colors.white))),
+            DataCell(Text(log.quantitySorted.toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: const Color(0xFF7B61FF)))),
             DataCell(
               Tooltip(
                 message: ngSummary,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: ngSummary == "None" ? Colors.transparent : Colors.red.shade50,
+                    color: ngSummary == "None" ? Colors.transparent : Colors.red.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     ngSummary.length > 20 ? "${ngSummary.substring(0, 17)}..." : ngSummary,
                     style: TextStyle(
-                      color: ngSummary == "None" ? Colors.grey : Colors.red.shade700,
+                      color: ngSummary == "None" ? Colors.white60 : Colors.redAccent,
                       fontSize: 11,
                       fontWeight: ngSummary == "None" ? FontWeight.normal : FontWeight.bold,
                     ),
@@ -708,7 +548,7 @@ class ManagementDashboard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('CURRENT LEADERS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: Colors.indigo)),
+        const Text('CURRENT LEADERS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: Colors.white)),
         const SizedBox(height: 12),
         Row(
           children: [
