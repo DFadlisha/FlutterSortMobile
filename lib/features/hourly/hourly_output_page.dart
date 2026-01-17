@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myapp/models/sorting_log.dart';
 import 'package:myapp/services/firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:myapp/theme/app_colors.dart';
 
 class HourlyOutputPage extends StatefulWidget {
   const HourlyOutputPage({super.key});
@@ -98,10 +99,9 @@ class _HourlyOutputPageState extends State<HourlyOutputPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF131131),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: const Color(0xFF1C1A45),
         title: const Text('Hourly Output', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -117,14 +117,14 @@ class _HourlyOutputPageState extends State<HourlyOutputPage> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [const Color(0xFF7B61FF).withOpacity(0.2), const Color(0xFF7B61FF).withOpacity(0.05)],
+                    colors: [AppColors.primaryPurple.withOpacity(0.2), AppColors.primaryPurple.withOpacity(0.05)],
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF7B61FF).withOpacity(0.3)),
+                  border: Border.all(color: AppColors.primaryPurple.withOpacity(0.3)),
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.access_time, color: Color(0xFF7B61FF), size: 32),
+                    Icon(Icons.access_time, color: AppColors.primaryPurple, size: 32),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -187,8 +187,8 @@ class _HourlyOutputPageState extends State<HourlyOutputPage> {
                       icon: const Icon(Icons.person_add_outlined),
                       label: const Text('Add Another Operator'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF7B61FF),
-                        side: const BorderSide(color: Color(0xFF7B61FF)),
+                        foregroundColor: AppColors.primaryPurple,
+                        side: const BorderSide(color: AppColors.primaryPurple),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
@@ -270,11 +270,11 @@ class _HourlyOutputPageState extends State<HourlyOutputPage> {
                 height: 64,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [const Color(0xFF7B61FF), const Color(0xFF6344FF)],
+                    colors: [AppColors.primaryPurple, AppColors.darkAccent],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
-                    BoxShadow(color: const Color(0xFF7B61FF).withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 6)),
+                    BoxShadow(color: AppColors.primaryPurple.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 6)),
                   ],
                 ),
                 child: ElevatedButton(
@@ -300,11 +300,8 @@ class _HourlyOutputPageState extends State<HourlyOutputPage> {
   Widget _buildCard({required String title, required IconData icon, required List<Widget> children}) {
     return Card(
       elevation: 0,
-      color: const Color(0xFF2D3561),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: const Color(0xFF7B61FF).withOpacity(0.3), width: 1),
-      ),
+      color: Theme.of(context).cardTheme.color,
+      shape: Theme.of(context).cardTheme.shape,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -318,10 +315,10 @@ class _HourlyOutputPageState extends State<HourlyOutputPage> {
                     color: const Color(0xFF7B61FF).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(icon, color: const Color(0xFF7B61FF), size: 20),
+                  child: Icon(icon, color: AppColors.primaryPurple, size: 20),
                 ),
                 const SizedBox(width: 12),
-                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF7B61FF), letterSpacing: 0.5)),
+                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primaryPurple, letterSpacing: 0.5)),
               ],
             ),
             const SizedBox(height: 16),
@@ -338,7 +335,7 @@ class _HourlyOutputPageState extends State<HourlyOutputPage> {
       labelStyle: const TextStyle(color: Colors.white70),
       helperText: helperText,
       helperStyle: const TextStyle(color: Colors.white60, fontSize: 11),
-      prefixIcon: Icon(icon, color: const Color(0xFF7B61FF)),
+      prefixIcon: Icon(icon, color: AppColors.primaryPurple),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -348,7 +345,7 @@ class _HourlyOutputPageState extends State<HourlyOutputPage> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: const Color(0xFF7B61FF), width: 2),
+        borderSide: const BorderSide(color: AppColors.primaryPurple, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

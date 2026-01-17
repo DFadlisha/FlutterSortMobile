@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myapp/features/dashboard/management_dashboard.dart';
 import 'package:myapp/features/scan/quality_scan_page.dart';
 import 'package:myapp/features/hourly/hourly_output_page.dart';
+import 'package:myapp/theme/app_colors.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -32,10 +33,14 @@ class _HomePageState extends State<HomePage> {
         child: _widgetOptions.elementAt(_selectedIndex),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFF1C1A45),
+        backgroundColor: Theme.of(context).brightness == Brightness.dark 
+            ? AppColors.darkSurface 
+            : Colors.white,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF7B61FF),
-        unselectedItemColor: Colors.white60,
+        selectedItemColor: AppColors.primaryPurple,
+        unselectedItemColor: Theme.of(context).brightness == Brightness.dark 
+            ? Colors.white60 
+            : Colors.black45,
         selectedFontSize: 12,
         unselectedFontSize: 12,
         items: const <BottomNavigationBarItem>[

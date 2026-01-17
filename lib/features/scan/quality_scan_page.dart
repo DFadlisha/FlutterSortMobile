@@ -9,6 +9,7 @@ import 'package:myapp/services/firestore_service.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:myapp/theme/app_colors.dart';
 import 'dart:developer' as developer;
 
 class NgEntry {
@@ -282,10 +283,9 @@ class _QualityScanPageState extends State<QualityScanPage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF131131),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: const Color(0xFF1C1A45),
         title: const Text('QCSR - Quality Report', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
@@ -352,7 +352,7 @@ class _QualityScanPageState extends State<QualityScanPage> {
                         controller: _hourController,
                         decoration: InputDecoration(
                           labelText: 'Hour (24-hour format)',
-                          prefixIcon: const Icon(Icons.access_time, color: const Color(0xFF7B61FF)),
+                          prefixIcon: const Icon(Icons.access_time, color: AppColors.primaryPurple),
                           helperText: 'Log entry for this specific hour',
                           helperStyle: const TextStyle(color: Colors.white60, fontSize: 11),
                         ),
@@ -373,11 +373,8 @@ class _QualityScanPageState extends State<QualityScanPage> {
                   // 2. Sorting Team Card
                   Card(
                     elevation: 0,
-                    color: const Color(0xFF2D3561),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: const Color(0xFF7B61FF).withOpacity(0.3), width: 1),
-                    ),
+                    color: Theme.of(context).cardTheme.color,
+                    shape: Theme.of(context).cardTheme.shape,
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Column(
@@ -388,13 +385,13 @@ class _QualityScanPageState extends State<QualityScanPage> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF7B61FF).withOpacity(0.2),
+                                  color: AppColors.primaryPurple.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Icon(Icons.group, color: const Color(0xFF7B61FF), size: 20),
+                                child: const Icon(Icons.group, color: AppColors.primaryPurple, size: 20),
                               ),
                               const SizedBox(width: 12),
-                              const Text('OPERATOR INFO', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF7B61FF), letterSpacing: 0.5)),
+                              const Text('OPERATOR INFO', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primaryPurple, letterSpacing: 0.5)),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -412,7 +409,7 @@ class _QualityScanPageState extends State<QualityScanPage> {
                                       decoration: InputDecoration(
                                         labelText: 'Operator ${idx + 1} Name',
                                         labelStyle: const TextStyle(color: Colors.white70),
-                                        prefixIcon: const Icon(Icons.person_outline, color: const Color(0xFF7B61FF)),
+                                        prefixIcon: const Icon(Icons.person_outline, color: AppColors.primaryPurple),
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(12),
                                         ),
@@ -422,7 +419,7 @@ class _QualityScanPageState extends State<QualityScanPage> {
                                         ),
                                         focusedBorder: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(12),
-                                          borderSide: const BorderSide(color: const Color(0xFF7B61FF), width: 2),
+                                          borderSide: const BorderSide(color: AppColors.primaryPurple, width: 2),
                                         ),
                                       ),
                                       validator: (value) => value!.isEmpty ? 'Enter name' : null,
@@ -454,8 +451,8 @@ class _QualityScanPageState extends State<QualityScanPage> {
                               icon: const Icon(Icons.person_add_outlined),
                               label: const Text('Add Another Operator'),
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF7B61FF),
-                                side: const BorderSide(color: Color(0xFF7B61FF)),
+                                foregroundColor: AppColors.primaryPurple,
+                                side: const BorderSide(color: AppColors.primaryPurple),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                               ),
@@ -730,11 +727,11 @@ class _QualityScanPageState extends State<QualityScanPage> {
                     height: 64,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [const Color(0xFF7B61FF), const Color(0xFF6344FF)],
+                        colors: [AppColors.primaryPurple, AppColors.darkAccent],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
-                        BoxShadow(color: const Color(0xFF7B61FF).withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 6)),
+                        BoxShadow(color: AppColors.primaryPurple.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 6)),
                       ],
                     ),
                     child: ElevatedButton(
@@ -795,11 +792,8 @@ class _QualityScanPageState extends State<QualityScanPage> {
   Widget _buildModernSectionCard({required String title, required IconData icon, required Color color, required List<Widget> children}) {
     return Card(
       elevation: 0,
-      color: const Color(0xFF2D3561),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: const Color(0xFF7B61FF).withOpacity(0.3), width: 1),
-      ),
+      color: Theme.of(context).cardTheme.color,
+      shape: Theme.of(context).cardTheme.shape,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -816,7 +810,7 @@ class _QualityScanPageState extends State<QualityScanPage> {
                   child: Icon(icon, color: color, size: 20),
                 ),
                 const SizedBox(width: 12),
-                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF7B61FF), letterSpacing: 0.5)),
+                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primaryPurple, letterSpacing: 0.5)),
               ],
             ),
             const SizedBox(height: 20),

@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/models/sorting_log.dart';
 import 'package:myapp/services/firestore_service.dart';
 import 'package:myapp/services/excel_export_service.dart';
+import 'package:myapp/theme/app_colors.dart';
 
 class ManagementDashboard extends StatelessWidget {
   const ManagementDashboard({super.key});
@@ -34,16 +35,14 @@ class ManagementDashboard extends StatelessWidget {
           final logs = snapshot.data ?? [];
 
           return Scaffold(
-            backgroundColor: const Color(0xFF1A1F3A),
             appBar: AppBar(
               elevation: 0,
-              backgroundColor: const Color(0xFF1C1A45),
               title: const Text('QCSR - Operator Output', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               iconTheme: const IconThemeData(color: Colors.white),
               bottom: TabBar(
                 labelColor: Colors.white,
                 unselectedLabelColor: Colors.white60,
-                indicatorColor: const Color(0xFF7B61FF),
+                indicatorColor: AppColors.primaryPurple,
                 indicatorWeight: 4,
                 indicatorSize: TabBarIndicatorSize.tab,
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -61,7 +60,7 @@ class ManagementDashboard extends StatelessWidget {
               ],
             ),
             body: Container(
-              decoration: const BoxDecoration(color: Color(0xFF131131)),
+              color: Theme.of(context).scaffoldBackgroundColor,
               child: TabBarView(
                 children: [
                   _buildOverviewTab(context, snapshot, logs),
@@ -111,9 +110,9 @@ class ManagementDashboard extends StatelessWidget {
               height: 250,
               padding: const EdgeInsets.fromLTRB(16, 24, 24, 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF2D3561),
+                color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkCard : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF7B61FF).withOpacity(0.3)),
+                border: Border.all(color: AppColors.primaryPurple.withOpacity(0.3)),
               ),
               child: LineChart(_buildChartData(logs, context)),
             ),
@@ -125,9 +124,9 @@ class ManagementDashboard extends StatelessWidget {
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFF2D3561),
+                color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkCard : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF7B61FF).withOpacity(0.3)),
+                border: Border.all(color: AppColors.primaryPurple.withOpacity(0.3)),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
@@ -150,7 +149,7 @@ class ManagementDashboard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, size: 20, color: const Color(0xFF7B61FF)),
+            Icon(icon, size: 20, color: AppColors.primaryPurple),
             const SizedBox(width: 8),
             Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2)),
           ],
@@ -196,13 +195,13 @@ class ManagementDashboard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.indigo.withOpacity(0.05),
+              color: AppColors.primaryPurple.withOpacity(0.05),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.indigo.withOpacity(0.2)),
+              border: Border.all(color: AppColors.primaryPurple.withOpacity(0.2)),
             ),
             child: const Row(
               children: [
-                Icon(Icons.timer_outlined, color: Colors.indigo),
+                Icon(Icons.timer_outlined, color: AppColors.primaryPurple),
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -219,16 +218,16 @@ class ManagementDashboard extends StatelessWidget {
             child: Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
-                side: BorderSide(color: Colors.grey.shade300),
+                side: BorderSide(color: AppColors.primaryPurple.withOpacity(0.2)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: DataTable(
                 headingRowHeight: 48,
                 headingTextStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12),
                 columns: [
-                  const DataColumn(label: Text('Operator', style: TextStyle(color: Colors.white))),
-                  ...sortedHours.map((h) => DataColumn(label: Text('${h.toString().padLeft(2, '0')}:00', style: const TextStyle(fontSize: 12, color: Colors.white)))),
-                  const DataColumn(label: Text('Total OK', style: TextStyle(color: const Color(0xFF7B61FF), fontWeight: FontWeight.bold))),
+                  const DataColumn(label: Text('Operator', style: TextStyle(color: Colors.white70))),
+                  ...sortedHours.map((h) => DataColumn(label: Text('${h.toString().padLeft(2, '0')}:00', style: const TextStyle(fontSize: 12, color: Colors.white70)))),
+                  const DataColumn(label: Text('Total OK', style: TextStyle(color: AppColors.primaryPurple, fontWeight: FontWeight.bold))),
                 ],
                 rows: operators.map((op) {
                   int opTotal = operatorHourly[op]!.values.fold(0, (a, b) => a + b);
@@ -252,7 +251,7 @@ class ManagementDashboard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                             decoration: val > 0
                                 ? BoxDecoration(
-                                    color: val > 200 ? Colors.indigo.withOpacity(0.15) : Colors.indigo.withOpacity(0.05),
+                                    color: val > 200 ? AppColors.primaryPurple.withOpacity(0.2) : AppColors.primaryPurple.withOpacity(0.05),
                                     borderRadius: BorderRadius.circular(4),
                                   )
                                 : null,
@@ -271,7 +270,7 @@ class ManagementDashboard extends StatelessWidget {
                       DataCell(
                         Text(
                           opTotal.toString(),
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: const Color(0xFF7B61FF), fontSize: 16),
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryPurple, fontSize: 16),
                         ),
                       ),
                     ],
@@ -294,7 +293,7 @@ class ManagementDashboard extends StatelessWidget {
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: const Color(0xFF7B61FF).withOpacity(0.3)),
+        side: BorderSide(color: AppColors.primaryPurple.withOpacity(0.3)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -303,7 +302,7 @@ class ManagementDashboard extends StatelessWidget {
           children: [
             const Row(
               children: [
-                Icon(Icons.insights, color: const Color(0xFF7B61FF)),
+                Icon(Icons.insights, color: AppColors.primaryPurple),
                 SizedBox(width: 8),
                 Text('Performance Insights', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
               ],
@@ -340,13 +339,15 @@ class ManagementDashboard extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [const Color(0xFF2D3561), const Color(0xFF3A4270)],
+            colors: Theme.of(context).brightness == Brightness.dark 
+                ? [AppColors.darkCard, AppColors.darkSurface]
+                : [Colors.white, AppColors.lightCard],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
           ],
-          border: Border.all(color: const Color(0xFF7B61FF).withOpacity(0.3)),
+          border: Border.all(color: AppColors.primaryPurple.withOpacity(0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,7 +360,7 @@ class ManagementDashboard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 0.5)),
             const SizedBox(height: 4),
-            Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: const Color(0xFF7B61FF))),
+            Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primaryPurple)),
           ],
         ),
       ),
@@ -380,7 +381,7 @@ class ManagementDashboard extends StatelessWidget {
     return LineChartData(
       lineTouchData: LineTouchData(
         touchTooltipData: LineTouchTooltipData(
-          getTooltipColor: (spot) => const Color(0xFF7B61FF).withOpacity(0.9),
+          getTooltipColor: (spot) => AppColors.primaryPurple.withOpacity(0.9),
           getTooltipItems: (spots) => spots.map((s) => LineTooltipItem('${s.y.toInt()} units', const TextStyle(color: Colors.black, fontWeight: FontWeight.bold))).toList(),
         ),
       ),
@@ -389,22 +390,22 @@ class ManagementDashboard extends StatelessWidget {
           spots: spots.isEmpty ? [const FlSpot(0, 0)] : spots,
           isCurved: true,
           curveSmoothness: 0.35,
-          color: const Color(0xFF7B61FF),
+          color: AppColors.primaryPurple,
           barWidth: 3,
           isStrokeCapRound: true,
           dotData: FlDotData(
             show: true,
             getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
               radius: 5,
-              color: const Color(0xFF7B61FF),
+              color: AppColors.primaryPurple,
               strokeWidth: 2,
-              strokeColor: Colors.white,
+              strokeColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
             ),
           ),
           belowBarData: BarAreaData(
             show: true,
             gradient: LinearGradient(
-              colors: [const Color(0xFF7B61FF).withOpacity(0.3), const Color(0xFF7B61FF).withOpacity(0.01)],
+              colors: [AppColors.primaryPurple.withOpacity(0.3), AppColors.primaryPurple.withOpacity(0.01)],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -476,7 +477,7 @@ class ManagementDashboard extends StatelessWidget {
               ),
             ),
             DataCell(Text(log.partName, style: const TextStyle(fontSize: 12, color: Colors.white))),
-            DataCell(Text(log.quantitySorted.toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: const Color(0xFF7B61FF)))),
+            DataCell(Text(log.quantitySorted.toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryPurple))),
             DataCell(
               Tooltip(
                 message: ngSummary,
